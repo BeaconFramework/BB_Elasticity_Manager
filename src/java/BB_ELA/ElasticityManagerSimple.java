@@ -35,7 +35,7 @@ public class ElasticityManagerSimple {
         this.m=new DBMongo();
         //this.m.init();
        // this.m.init("../webapps/OSFFM/WEB-INF/Configuration_bit");
-        this.m.connectLocale("10.9.0.42");//this.m.connectLocale(this.m.getMdbIp());
+        this.m.connectLocale("10.9.240.1");//this.m.connectLocale(this.m.getMdbIp());
     }
     public ElasticityManagerSimple(DBMongo m) {
         this.m=m;

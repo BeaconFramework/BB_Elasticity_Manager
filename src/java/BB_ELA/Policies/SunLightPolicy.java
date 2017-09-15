@@ -22,7 +22,7 @@ import MDBInt.MDBIException;
 import BB_ELA.ElasticityPolicyException;
 import BB_ELA.Policy;
 //import osffmcli.OSFFM_ORC.OrchestrationManager;
-import com.google.common.collect.HashBiMap;
+//import com.google.common.collect.HashBiMap;
 import java.io.File;
 import java.time.Clock;
 import java.time.LocalTime;
@@ -52,7 +52,7 @@ public class SunLightPolicy implements Policy,Runnable{
     private String fileConf="/webapps/BBElasticityManager/WEB-INF/configuration_SunLightPolicy.xml";//this path starts from the tomcat home
     //VARIABLE TO BE RETRIEVED FROM FILECONF
     private long granularityCheck=20000;//3600000;//default value is 1 hour
-    private int threshold=19;//default value is 19 (7pm)
+    private int threshold=17;//default value is 19 (7pm)
     private int minimumGap=-8;//default value is -8 hours
     private String bbUrl="http://localhost:8084/BeaconBroker/os2os/orchestrator";
     private String bbuser="bbuserAd";
@@ -192,75 +192,75 @@ public class SunLightPolicy implements Policy,Runnable{
      * @return 
      */
     @Override
-    public HashMap selectNewDatacenter(Integer val){
-        try{
-        HashMap<String,Object> element=new HashMap<String,Object>();
-        Integer searchedGap;
-        if (val == null)
-            searchedGap = this.actualDCGap + minimumGap;
-        else
-            searchedGap = val - 1;
-        if ((searchedGap < -12) || (searchedGap > 14)) {
-            if (searchedGap < -12) {
-                searchedGap = searchedGap + 24;
+    public HashMap selectNewDatacenter(Integer val) {
+        try {
+            String tmpGap = "";
+            HashMap<String, Object> element = new HashMap<String, Object>();
+            Integer searchedGap;
+            if (val == null) {
+                searchedGap = this.actualDCGap + minimumGap;
             } else {
-                searchedGap = searchedGap - 24;
+                searchedGap = val - 1;
             }
-        }
-        if(index!=null){
-            if (!index.containsKey(searchedGap.toString())){
-                System.out.println("QUIT"+searchedGap+this.firstCloudID);
+            if ((searchedGap < -12) || (searchedGap > 14)) {
+                if (searchedGap < -12) {
+                    searchedGap = searchedGap + 24;
+                } else {
+                    searchedGap = searchedGap - 24;
+                }
+            }
+            if (index != null) {
+                if (!index.containsKey(searchedGap.toString())) {
+                    System.out.println("QUIT" + searchedGap + this.firstCloudID);
+                    index.put(searchedGap.toString(), Boolean.FALSE);
+
+                } else {
+                    return null;
+                }
+            } else {
+                index = new HashMap<String, Boolean>();
                 index.put(searchedGap.toString(), Boolean.FALSE);
-                
             }
-            else{
-                return null;
+            if (searchedGap > 0) {
+                tmpGap = "+" + searchedGap.toString();
+            } else {
+                tmpGap = searchedGap.toString();
             }
-        }
-        else{
-            index=new HashMap<String,Boolean>();
-            index.put(searchedGap.toString(), Boolean.FALSE);
-        }
-        
-        if (this.datacenterMap.containsKey(searchedGap.toString())) {
-            ArrayList<String> ar = this.datacenterMap.get(searchedGap.toString());//Take array and and findcorrect DC
-            Iterator i = ar.iterator();
-            boolean end=false;
-            while (i.hasNext()&&(!end)) {
-                String tmpDCID = (String) i.next();
-                
-                
-                
-                //07/09/2016 basandosi sulla sunlight demo di BEACON basta identificare il DC su cui è presente una VM del gruppo e tutte le altre saranno spostate(attivate) di conseguenza
-                ////in alternativa si dovrebbe prendere il datacenter adatto per ogni VM da monitorare
-                for (String targetVM : this.monitoredVM) {
-                    JSONObject jo=new JSONObject(tmpDCID);
-                String twinVM = this.mongo.findResourceMate(this.tenant, targetVM, jo.getString("cloudId"));
-                    
-                    if(twinVM==null)
-                        break;
-                    else{
-                        end = true;
-                        element.put("dcID", tmpDCID);
-                        element.put("newgap", searchedGap);
-                        index.replace(searchedGap.toString(),true);
-                        return element;
+            if (this.datacenterMap.containsKey(tmpGap)) {
+                ArrayList<String> ar = this.datacenterMap.get(tmpGap);//Take array and and findcorrect DC
+                Iterator i = ar.iterator();
+                boolean end = false;
+                while (i.hasNext() && (!end)) {
+                    String tmpDCID = (String) i.next();
+
+                    //07/09/2016 basandosi sulla sunlight demo di BEACON basta identificare il DC su cui è presente una VM del gruppo e tutte le altre saranno spostate(attivate) di conseguenza
+                    ////in alternativa si dovrebbe prendere il datacenter adatto per ogni VM da monitorare
+                    for (String targetVM : this.monitoredVM) {
+                        JSONObject jo = new JSONObject(tmpDCID);
+                        String twinVM = this.mongo.findResourceMate(this.tenant, targetVM, jo.getString("cloudId"));
+
+                        if (twinVM == null) {
+                            break;
+                        } else {
+                            end = true;
+                            element.put("dcID", tmpDCID);
+                            element.put("newgap", searchedGap);
+                            index.replace(tmpGap, true);
+                            return element;
+                        }
+                    }
+                    if (!end) {
+                        LOGGER.error("Something going wrong it's impossible find a twinVM for VMs monitored.The migration for that VM is moved on another DC");
+                        index.put(tmpGap, false);
+                        return this.selectNewDatacenter(searchedGap);
                     }
                 }
-                if(!end)
-                {
-                    LOGGER.error("Something going wrong it's impossible find a twinVM for VMs monitored.The migration for that VM is moved on another DC");
-                    index.put(searchedGap.toString(),false);
-                    return this.selectNewDatacenter(searchedGap);
-                }
+            } else {
+                return this.selectNewDatacenter(searchedGap);
             }
-        } else {
-            return this.selectNewDatacenter(searchedGap);
-        }
-        
-        }
-        catch(Exception  e){
-            System.err.println("EXCEPTION"+e.getMessage());
+
+        } catch (Exception e) {
+            System.err.println("EXCEPTION" + e.getMessage());
             e.printStackTrace();
         }
         return null;
