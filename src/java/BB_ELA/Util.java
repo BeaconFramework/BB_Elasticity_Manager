@@ -55,7 +55,7 @@ public class Util {
                 JSONObject tmp=new JSONObject(resp);
                 tmp.remove("_id");
                 tmp.remove("insertTimestamp");
-                return this.prepare_answer(tmp.toString(0));
+                return this.prepare_answer(tmp);
             }
         /*}catch(MDBIException e){
             return this.prepare_error("Exception Occurred in MongoDB interaction. Searched twinVM for VM "+original+" of the tenant "+borrower+" in the target cloud "+cloudId+". Exception Obtained:\n"+e.getMessage(), "Medium");
@@ -85,7 +85,7 @@ public class Util {
                 Iterator i=resp.iterator();
                 while(i.hasNext())
                     ja.put(new JSONObject((String)i.next()));
-                return this.prepare_answer(ja.toString(0));
+                return this.prepare_answer(ja);
             }
         /*}catch(MDBIException e){
             return this.prepare_error("Exception Occurred in MongoDB interaction. Searched twinVM for VM "+original+" of the tenant "+borrower+" in the target cloud "+cloudId+". Exception Obtained:\n"+e.getMessage(), "Medium");
@@ -102,7 +102,7 @@ public class Util {
      * @return an instance of java.lang.String
      */
     @GET
-    @Path("/{borrower}/{templateUUID}")
+    @Path("/{borrower}/fromTemplate/{templateUUID}")
     @Produces("application/json")
     public String getTwinVMsfromTemplate(@PathParam("borrower") String borrower,@PathParam("templateUUID") String original) {
         try{
@@ -115,7 +115,7 @@ public class Util {
                 Iterator i=resp.iterator();
                 while(i.hasNext())
                     ja.put(new JSONObject((String)i.next()));
-                return this.prepare_answer(ja.toString(0));
+                return this.prepare_answer(ja);
             }
         /*}catch(MDBIException e){
             return this.prepare_error("Exception Occurred in MongoDB interaction. Searched twinVM for VM "+original+" of the tenant "+borrower+" in the target cloud "+cloudId+". Exception Obtained:\n"+e.getMessage(), "Medium");
@@ -142,7 +142,7 @@ public class Util {
                 JSONObject tmp=new JSONObject(resp);
                 tmp.remove("_id");
                 tmp.remove("insertTimestamp");
-                return this.prepare_answer(tmp.toString(0));
+                return this.prepare_answer(tmp);
             }
         /*}catch(MDBIException e){
             return this.prepare_error("Exception Occurred in MongoDB interaction. Searched twinVM for VM "+original+" of the tenant "+borrower+" in the target cloud "+cloudId+". Exception Obtained:\n"+e.getMessage(), "Medium");
@@ -163,7 +163,7 @@ public class Util {
     public void putXml(String content) {
     }
     
-    private String prepare_answer(String data) throws JSONException{
+    private String prepare_answer(Object data) throws JSONException{
         JSONObject err=new JSONObject();
         err.put("state", 0);
         err.put("message", "None");

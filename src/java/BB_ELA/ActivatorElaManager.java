@@ -36,7 +36,7 @@ import org.json.JSONObject;
  *
  * @author giuseppe
  */
-@Path("elaman")
+@Path("/elaman")
 public class ActivatorElaManager {
 
     @Context
@@ -55,7 +55,7 @@ public class ActivatorElaManager {
      * @return an instance of java.lang.String
      */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces("application/json")
     public String getJson() {
         //TODO return proper representation object
         throw new UnsupportedOperationException();
@@ -66,7 +66,7 @@ public class ActivatorElaManager {
      * @param content representation for the resource
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes("application/json")
     public void activateElaManager(String content) {
         try {
             ElasticityManagerSimple ela= new ElasticityManagerSimple();

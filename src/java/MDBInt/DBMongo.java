@@ -1052,7 +1052,7 @@ public class DBMongo {
             query.put("stackName", obj.get("stackName"));
             query.put("resourceName", obj.get("resourceName"));
             query.put("type", obj.get("type"));
-            query.put("state", false);
+            //query.put("state", false);
             query.put("idCloud",dcid);
 
             System.out.println("MONGO QUERY "+query+ " in DB:"+dbName+" for UUID:"+uuid );
