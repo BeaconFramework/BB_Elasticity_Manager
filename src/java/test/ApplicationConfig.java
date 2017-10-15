@@ -30,7 +30,7 @@ public class ApplicationConfig extends Application {
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(BB_ELA.ActivatorElaManager.class);
-        resources.add(test.testThread.class);
+        resources.add(BB_ELA.Util.class);
     }
     
 }

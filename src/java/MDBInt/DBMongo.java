@@ -1042,13 +1042,13 @@ public class DBMongo {
         DBObject obj = null;
         BasicDBObject query = new BasicDBObject();
         DBCursor cursore = null;
-        //ArrayList<String> mates = new ArrayList();
         Iterator<DBObject> it;
 
         obj = collection.findOne(first);
 
         if (obj != null) {
-            query.put("localResourceName", obj.get("localResourceName"));
+            query.put( "requestUID", obj.get( "requestUID"));
+            query.put("uuidTemplate", obj.get("uuidTemplate"));
             query.put("stackName", obj.get("stackName"));
             query.put("resourceName", obj.get("resourceName"));
             query.put("type", obj.get("type"));
@@ -1057,8 +1057,37 @@ public class DBMongo {
 
             System.out.println("MONGO QUERY "+query+ " in DB:"+dbName+" for UUID:"+uuid );
             DBCursor b=collection.find(query).sort(new BasicDBObject("insertTimestamp",-1)).limit(1);
-            if(obj!=null)
-                return b.next().toString();
+            Iterator i=b.iterator();
+            if(b!=null&&i.hasNext())
+                return i.next().toString();
+            else
+                return null;
+        }
+        return null;
+    }
+    
+    public String findInfoVM(String dbName, String uuid) {
+
+        BasicDBObject first = new BasicDBObject();
+        first.put("phisicalResourceId", uuid);
+
+        DB database = this.getDB(dbName);
+        DBCollection collection = database.getCollection("runTimeInfo");
+        DBObject obj = null;
+        BasicDBObject query = new BasicDBObject();
+       // DBCursor cursore = null;
+        
+        obj = collection.findOne(first);
+
+        if (obj != null) {
+            query.put("cloudId",obj.get("idCloud"));
+            collection = database.getCollection("datacenters");
+            //System.out.println("MONGO QUERY "+query+ " in DB:"+dbName+" for UUID:"+uuid );
+            DBObject b=collection.findOne(query);
+            if(b!=null){
+                obj.put("idmEndpoint", b.get("idmEndpoint"));
+                return obj.toString();
+            }
             else
                 return null;
         }
@@ -1072,7 +1101,86 @@ public class DBMongo {
         return mates;*/
         return null;
     }
+    
+    public ArrayList<String> findALLResourceMate(String dbName, String uuid) {
+        ArrayList<String> finalOb=new ArrayList<String>();
+        BasicDBObject first = new BasicDBObject();
+        first.put("phisicalResourceId", uuid);
 
+        DB database = this.getDB(dbName);
+        DBCollection collection = database.getCollection("runTimeInfo");
+        DBObject obj = null;
+        BasicDBObject query = new BasicDBObject();
+        DBCursor cursore = null;
+        Iterator<DBObject> it;
+
+        obj = collection.findOne(first);
+
+        if (obj != null) {
+            query.put( "requestUID", obj.get( "requestUID"));
+            query.put("uuidTemplate", obj.get("uuidTemplate"));
+            query.put("localResourceName", obj.get("localResourceName"));
+            query.put("stackName", obj.get("stackName"));
+            query.put("resourceName", obj.get("resourceName"));
+            query.put("type", obj.get("type"));
+            query.put("state", false);
+            
+            System.out.println("MONGO QUERY "+query+ " in DB:"+dbName+" for UUID:"+uuid );
+            DBCursor b=collection.find(query).sort(new BasicDBObject("insertTimestamp",-1));
+            Iterator i=b.iterator();
+            if(i.hasNext())
+                while(i.hasNext()){
+                    DBObject tmp=(DBObject)i.next();
+                    tmp.removeField("_id");
+                    tmp.removeField("insertTimestamp");
+                    finalOb.add( tmp.toString());
+                }
+            else
+                return null;
+        }
+        return finalOb;
+    }
+
+    public ArrayList<String> findALLResourceMatefromTemplate(String dbName, String uuid) {
+        ArrayList<String> finalOb=new ArrayList<String>();
+        BasicDBObject first = new BasicDBObject();
+        first.put("uuidTemplate", uuid);
+
+        DB database = this.getDB(dbName);
+        DBCollection collection = database.getCollection("runTimeInfo");
+        DBObject obj = null;
+        BasicDBObject query = new BasicDBObject();
+        DBCursor cursore = null;
+        Iterator<DBObject> it;
+
+        //obj = collection.findOne(first);
+        
+        DBCursor bobj = collection.find(first).sort(new BasicDBObject("insertTimestamp",-1));
+        obj= bobj.next();
+        if (obj != null) {
+            query.put( "requestUID", obj.get( "requestUID"));
+            query.put("uuidTemplate", uuid);
+            query.put("localResourceName", obj.get("localResourceName"));
+            query.put("stackName", obj.get("stackName"));
+            query.put("resourceName", obj.get("resourceName"));
+            query.put("type", obj.get("type"));
+            //query.put("state", false);
+            
+            System.out.println("MONGO QUERY "+query+ " in DB:"+dbName+" for UUID:"+uuid );
+            DBCursor b=collection.find(query).sort(new BasicDBObject("insertTimestamp",-1));
+            Iterator i=b.iterator();
+            if(i.hasNext())
+                while(i.hasNext()){
+                    DBObject tmp=(DBObject)i.next();
+                    tmp.removeField("_id");
+                    tmp.removeField("insertTimestamp");
+                    finalOb.add( tmp.toString());
+                }
+            else
+                return null;
+        }
+        return finalOb;
+    }
     public boolean updateStateRunTimeInfo(String dbName, String phisicalResourceId, boolean newState) {
         boolean result = true;
         BasicDBObject first = new BasicDBObject();
@@ -1192,7 +1300,23 @@ public class DBMongo {
         DBObject j = collezione.findOne(first);
         return j.toString();
     }
-
+    
+    /**
+     * Method used for the retrieve  Federated Tenant UUID from Borrower and cmp_endpoint.
+     * @param tenant
+     * @param cmp_endpoint
+     * @return tenantuuid
+     */
+    public String getTenantuuidfromborrower(String tenant,String cmp_endpoint){
+       DB database = this.getDB(this.identityDB);
+       DBCollection collection = database.getCollection("fedtenanttoBor");
+       BasicDBObject researchField = new BasicDBObject("fedUuid", tenant);
+       researchField.append("cmp_endpoint", cmp_endpoint);
+       DBObject risultato = collection.findOne(researchField);
+       String tenantuuid=(String)risultato.get("fedUuid");
+       return tenantuuid;
+    }
+    
     //BEACON>>> Function added for preliminaryDEMO.
     /**
      * Returns generic federation infoes.
