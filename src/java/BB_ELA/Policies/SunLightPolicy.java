@@ -54,7 +54,7 @@ public class SunLightPolicy implements Policy,Runnable{
     private long granularityCheck=20000;//3600000;//default value is 1 hour
     private int threshold=17;//default value is 19 (7pm)
     private int minimumGap=-8;//default value is -8 hours
-    private String bbUrl="http://localhost:8084/BeaconBroker/os2os/orchestrator";
+    private String bbUrl="http://10.9.1.114:8080/BB/os2os/orchestrator";
     private String bbuser="bbuserAd";
     private String bbpass="bbpassAd";
     
@@ -166,6 +166,7 @@ public class SunLightPolicy implements Policy,Runnable{
                     param.put("vm2shut", targetVM);
                     String twinVMUUID=(new JSONObject(twinVM)).getString("phisicalResourceId");
                     param.put("vm2Act", twinVMUUID);
+                    param.put("sitetarget", jo.getString("cloudId"));
                     if (!this.moveVM(param)) {
                         LOGGER.error("error occurred in migration VM " + targetVM);//sistemare qst logger
                         newMonitoredVMs.add(targetVM);
@@ -288,7 +289,7 @@ public class SunLightPolicy implements Policy,Runnable{
         try{
            // this.om.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation, this.mongo, "RegionOne");//BEACON>>> Region field need to be managed?
             System.out.println("STO PER migrare la "+(String)params.get("vm2shut"));
-            this.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation,"RegionOne");//BEACON>>> Region field need to be managed?
+            this.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation,"RegionOne",(String)params.get("sitetarget"));//BEACON>>> Region field need to be managed?
             System.out.println("HO ATTIVATO la "+(String)params.get("vm2act"));
         }
         catch(Exception e){
@@ -382,7 +383,7 @@ public class SunLightPolicy implements Policy,Runnable{
      * @param region
      * @author gtricomi
      */
-    public void migrationProcedure(String vm,String tenant,String userFederation,String vmTwin,String pswFederation,String region) throws JSONException{
+    public void migrationProcedure(String vm,String tenant,String userFederation,String vmTwin,String pswFederation,String region,String sitetarget) throws JSONException{
         JSONObject param = new JSONObject();
         param.put("vm", vm);
         param.put("tenant", tenant);
@@ -392,10 +393,21 @@ public class SunLightPolicy implements Policy,Runnable{
         param.put("region", region);
         Client4WS cws=new Client4WS(this.bbUrl);
         try {
-            Response r=cws.make_request(this.bbUrl, this.bbuser, this.bbpass, tenant, "post", param.toString());
+            Response r=cws.make_request(this.bbUrl+"/migrateVMs/", this.bbuser, this.bbpass, tenant, "post", param.toString());
         }
         catch (WSException wse){
             LOGGER.error("The request has generated a WS Exception!"+wse.getMessage());
+        }
+        catch (Exception ex) {
+            LOGGER.error(ex.getMessage());
+        }
+        try {
+            param = new JSONObject();
+            param.put("site", sitetarget);
+            param.put("tenant", tenant);
+            Response r = cws.make_request(this.bbUrl + "/connectOne/", this.bbuser, this.bbpass, tenant, "post", param.toString());
+        } catch (WSException wse) {
+            LOGGER.error("The request has generated a WS Exception!" + wse.getMessage());
         }
         catch (Exception ex) {
             LOGGER.error(ex.getMessage());

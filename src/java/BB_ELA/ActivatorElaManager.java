@@ -60,7 +60,7 @@ public class ActivatorElaManager {
         //TODO return proper representation object
         throw new UnsupportedOperationException();
     }
-
+ 
     /**
      * PUT method for updating or creating an instance of ActivatorElaManager
      * @param content representation for the resource
