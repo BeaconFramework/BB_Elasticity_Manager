@@ -67,8 +67,9 @@ public class ActivatorElaManager {
      */
     @POST
     @Consumes("application/json")
-    public void activateElaManager(String content) {
+    public String activateElaManager(String content) {
         try {
+            System.out.println("Started activateElaManager WS!");
             ElasticityManagerSimple ela= new ElasticityManagerSimple();
             JSONObject jo = new JSONObject(content);
             String tenant=jo.getString("tenant");
@@ -83,12 +84,16 @@ public class ActivatorElaManager {
             try {
                 LOGGER.debug(tmpMap.toString());
                 ela=ela.startMonitoringThreads(tenant, stack, this.fromJSONtoMAP(tmpMap), userFederation,passwordFederation,mingap,firstC,manifestName );
+                System.out.println("End activateElaManager");
             } catch (ElasticityPolicyException ex) {
                 LOGGER.error("error occurred in startMonitoringThreads: "+ex.getMessage());
+                return "error occurred in startMonitoringThreads: "+ex.getMessage();
             }
         } catch (JSONException ex) {
             LOGGER.debug(ex.getMessage());
+            return "error occurred in activateElaManager: "+ex.getMessage();
         }
+        return "ok";
     }
     
     

@@ -21,9 +21,12 @@ import MDBInt.DBMongo;
 import MDBInt.MDBIException;
 import BB_ELA.ElasticityPolicyException;
 import BB_ELA.Policy;
+import java.io.BufferedWriter;
 //import osffmcli.OSFFM_ORC.OrchestrationManager;
 //import com.google.common.collect.HashBiMap;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -67,9 +70,9 @@ public class SunLightPolicy implements Policy,Runnable{
     private HashMap<String,Boolean> index;
     private String firstCloudID;
     private String templateName, stack;
+    private BufferedWriter log ;
     
-    
-    public SunLightPolicy(HashMap<String,Object> paramsMap)throws ElasticityPolicyException {
+    public SunLightPolicy(HashMap<String,Object> paramsMap)throws ElasticityPolicyException,Exception {
         //paramsMap.get(this) // I need to understand which parameters need here
         this.tenant=(String)paramsMap.get("tenantName");
         this.mongo=(DBMongo)paramsMap.get("mongoConnector");
@@ -84,7 +87,7 @@ public class SunLightPolicy implements Policy,Runnable{
         this.monitoredVM=new ArrayList<String>();
         this.init();
         this.constructDCMap((ArrayList<ArrayList<String>>)paramsMap.get("dcList"));
-        
+        this.log = new BufferedWriter(new FileWriter("/tmp/unlightpol.log"));
     }
     
     public void init(){
@@ -148,6 +151,11 @@ public class SunLightPolicy implements Policy,Runnable{
         HashMap elem = this.selectNewDatacenter(null);
         String tmpDCID=(String)elem.get("dcID");
         System.out.println("Migration1");
+        try {
+            log.write("Migration1");
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(SunLightPolicy.class.getName()).log(Level.SEVERE, null, ex);
+        }
        try{
         if(tmpDCID!=null){
             ArrayList<String> newMonitoredVMs=new ArrayList<String>();
@@ -162,15 +170,20 @@ public class SunLightPolicy implements Policy,Runnable{
                     continue;
                 } else {
                     System.out.println("TwinVM FOUND");
+                    try {
+                        log.write("TwinVM FOUND");
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(SunLightPolicy.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     HashMap<String, Object> param = new HashMap<String, Object>();
                     param.put("vm2shut", targetVM);
-                    String twinVMUUID=(new JSONObject(twinVM)).getString("phisicalResourceId");
+                    String twinVMUUID = (new JSONObject(twinVM)).getString("phisicalResourceId");
                     param.put("vm2Act", twinVMUUID);
                     param.put("sitetarget", jo.getString("cloudId"));
                     if (!this.moveVM(param)) {
                         LOGGER.error("error occurred in migration VM " + targetVM);//sistemare qst logger
                         newMonitoredVMs.add(targetVM);
-                        
+
                     }
                     newMonitoredVMs.add(twinVMUUID);
                 }
@@ -212,6 +225,11 @@ public class SunLightPolicy implements Policy,Runnable{
             }
             if (index != null) {
                 if (!index.containsKey(searchedGap.toString())) {
+                     try {
+                        log.write("QUIT" + searchedGap + this.firstCloudID);
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(SunLightPolicy.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     System.out.println("QUIT" + searchedGap + this.firstCloudID);
                     index.put(searchedGap.toString(), Boolean.FALSE);
 
@@ -289,8 +307,9 @@ public class SunLightPolicy implements Policy,Runnable{
         try{
            // this.om.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation, this.mongo, "RegionOne");//BEACON>>> Region field need to be managed?
             System.out.println("STO PER migrare la "+(String)params.get("vm2shut"));
+            String vmtoact=(String)params.get("vm2act");
             this.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation,"RegionOne",(String)params.get("sitetarget"));//BEACON>>> Region field need to be managed?
-            System.out.println("HO ATTIVATO la "+(String)params.get("vm2act"));
+            System.out.println("HO ATTIVATO la "+vmtoact);
         }
         catch(Exception e){
             LOGGER.error("Error occurred in moveVM:"+e.getMessage());
@@ -334,6 +353,7 @@ public class SunLightPolicy implements Policy,Runnable{
             Clock clock = Clock.systemUTC();
             LocalTime osffmTime=LocalTime.now(clock);
             System.out.println("checked time in : "+this.firstCloudID+" is "+osffmTime.getHour()+this.actualDCGap);
+            
             //System.out.println(osffmTime.getHour()+this.actualDCGap);
             //System.out.println(osffmTime.getHour()+this.actualDCGap>this.threshold);
             if((osffmTime.getHour()+this.actualDCGap)>(this.threshold+this.actualDCGap)){
@@ -392,6 +412,7 @@ public class SunLightPolicy implements Policy,Runnable{
         param.put("pswFederation", pswFederation);
         param.put("region", region);
         Client4WS cws=new Client4WS(this.bbUrl);
+        System.out.println("----->"+vmTwin);
         try {
             Response r=cws.make_request(this.bbUrl+"/migrateVMs/", this.bbuser, this.bbpass, tenant, "post", param.toString());
         }
@@ -401,17 +422,17 @@ public class SunLightPolicy implements Policy,Runnable{
         catch (Exception ex) {
             LOGGER.error(ex.getMessage());
         }
-        try {
-            param = new JSONObject();
-            param.put("site", sitetarget);
-            param.put("tenant", tenant);
-            Response r = cws.make_request(this.bbUrl + "/connectOne/", this.bbuser, this.bbpass, tenant, "post", param.toString());
-        } catch (WSException wse) {
-            LOGGER.error("The request has generated a WS Exception!" + wse.getMessage());
-        }
-        catch (Exception ex) {
-            LOGGER.error(ex.getMessage());
-        }
+//        try {
+//            param = new JSONObject();
+//            param.put("site", sitetarget);
+//            param.put("tenant", tenant);
+//            Response r = cws.make_request(this.bbUrl + "/connectOne/", this.bbuser, this.bbpass, tenant, "post", param.toString());
+//        } catch (WSException wse) {
+//            LOGGER.error("The request has generated a WS Exception!" + wse.getMessage());
+//        }
+//        catch (Exception ex) {
+//            LOGGER.error(ex.getMessage());
+//        }
     }
     
 }

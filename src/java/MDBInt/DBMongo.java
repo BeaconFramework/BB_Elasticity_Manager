@@ -477,7 +477,7 @@ public class DBMongo {
         first.put("idCloud", idcloud);
         first.put("uuidTemplate",uuidTemplate);
         first.put("stackName",stackname);
-
+        first.put("type", "OS::Nova::Server");
         DB database = this.getDB(dbName);
         DBCollection collection = database.getCollection("runTimeInfo");
         try{

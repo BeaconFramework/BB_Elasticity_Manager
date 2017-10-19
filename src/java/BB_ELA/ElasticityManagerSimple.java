@@ -20,6 +20,7 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 import MDBInt.DBMongo;
 import BB_ELA.Policies.SunLightPolicy;
+import java.util.logging.Level;
 //import osffmcli.OSFFM_ELA.Policies.SunLight_Policy;
 
 /**
@@ -52,10 +53,16 @@ public class ElasticityManagerSimple {
         paramsMap.put("pswFederation",pswFederation);
         paramsMap.put("minimumGap",minimumgap);
         paramsMap.put("firstCloudID",firstCloudID);
-        SunLightPolicy slp=new SunLightPolicy(paramsMap);
+        SunLightPolicy slp=null;
+         try {
+             slp = new SunLightPolicy(paramsMap);
+         } catch (Exception ex) {
+             java.util.logging.Logger.getLogger(ElasticityManagerSimple.class.getName()).log(Level.SEVERE, null, ex);
+         }
         monitoringPolicy.put(stack, slp);
         System.out.println("Starting Monitoring Thread");
         slp.run();
+        System.out.println("End startMonitoringThreads");
         tenantHash.put(tenant,monitoringPolicy);
         return this;
     }  
