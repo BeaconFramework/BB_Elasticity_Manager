@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <writeOnCfgFolder>yes</writeOnCfgFolder> 
+  <moduleName>sunlightPolicy</moduleName>
+  <pluginParams>
+    <granularityCheck>20000</granularityCheck>
+    <threshold>17</threshold>
+    <bburl>http://10.9.1.114:8080/BB/os2os/orchestrator</bburl>
+    <bbpass>bbpass</bbpass>
+    <bbuser>bbuser</bbuser>
+  </pluginParams>
+</root>
