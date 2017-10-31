@@ -16,3 +16,5 @@ To instantiate it, the deployer have to create a directory in the path: "/home/b
 i) configuration_bigDataPlugin.xml
 
 i) configuration_SunLightPolicy.xml
+
+It is tested on Tomcat 8.0.27
