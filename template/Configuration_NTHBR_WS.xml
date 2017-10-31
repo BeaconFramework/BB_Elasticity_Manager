@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <writeOnCfgFolder>yes</writeOnCfgFolder> 
+  <pluginParams>
+    <fedSDNTarget>10.9.0.26</fedSDNTarget>
+  </pluginParams>
+</root>
