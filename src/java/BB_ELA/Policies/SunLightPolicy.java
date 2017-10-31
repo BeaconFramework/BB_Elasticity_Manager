@@ -52,7 +52,7 @@ import utils.Exception.WSException;
 public class SunLightPolicy implements Policy,Runnable{
     
     final Logger LOGGER = Logger.getLogger(SunLightPolicy.class);
-    private String fileConf="/webapps/BBElasticityManager/WEB-INF/configuration_SunLightPolicy.xml";//this path starts from the tomcat home
+    private String fileConf="/home/beacon/beaconConf/configuration_SunLightPolicy.xml";//this path starts from the tomcat home
     //VARIABLE TO BE RETRIEVED FROM FILECONF
     private long granularityCheck=20000;//3600000;//default value is 1 hour
     private int threshold=17;//default value is 19 (7pm)
@@ -60,7 +60,7 @@ public class SunLightPolicy implements Policy,Runnable{
     private String bbUrl="http://10.9.1.114:8080/BB/os2os/orchestrator";
     private String bbuser="bbuserAd";
     private String bbpass="bbpassAd";
-    
+    private ParserXML parser;
     private int actualDCGap;
     private DBMongo mongo;
     private String tenant,userFederation,pswFederation;
@@ -71,6 +71,7 @@ public class SunLightPolicy implements Policy,Runnable{
     private String firstCloudID;
     private String templateName, stack;
     private BufferedWriter log ;
+    
     
     public SunLightPolicy(HashMap<String,Object> paramsMap)throws ElasticityPolicyException,Exception {
         //paramsMap.get(this) // I need to understand which parameters need here
@@ -90,19 +91,21 @@ public class SunLightPolicy implements Policy,Runnable{
         this.log = new BufferedWriter(new FileWriter("/tmp/unlightpol.log"));
     }
     
-    public void init(){
+    public void init() {
         Element params;
-        this.datacenterMap=new HashMap<String,ArrayList<String>>();
+        this.datacenterMap = new HashMap<String, ArrayList<String>>();
         try {
-        /*String file=System.getenv("HOME");
-        ParserXML parser = new ParserXML(new File(file+fileConf));
-        params = parser.getRootElement().getChild("pluginParams");
-        this.granularityCheck = Long.parseLong(params.getChildText("granularityCheck"));
-        this.threshold =Integer.parseInt(params.getChildText("threshold"));*/
-        //this.minimumGap=Integer.parseInt(params.getChildText("minimumGap"));
-                
-        } 
-        catch (Exception ex) {
+
+            parser = new ParserXML(new File(this.fileConf));
+            params = parser.getRootElement().getChild("pluginParams");
+            this.granularityCheck = Long.valueOf(params.getChildText("granularityCheck")).longValue();
+            this.threshold = Integer.valueOf(params.getChildText("threshold"));
+            this.bbUrl = params.getChildText("bburl");
+            this.bbpass = params.getChildText("bbpass");
+            this.bbuser = params.getChildText("bbuser");
+
+            //this.connectReplication();
+        } catch (Exception ex) {
             LOGGER.error("Error occurred in configuration ");
             ex.printStackTrace();
         }
@@ -309,7 +312,7 @@ public class SunLightPolicy implements Policy,Runnable{
             System.out.println("STO PER migrare la "+(String)params.get("vm2shut"));
             String vmtoact=(String)params.get("vm2act");
             this.migrationProcedure((String)params.get("vm2shut"), this.tenant, this.userFederation, (String)params.get("vm2Act"), this.pswFederation,"RegionOne",(String)params.get("sitetarget"));//BEACON>>> Region field need to be managed?
-            System.out.println("HO ATTIVATO la "+vmtoact);
+            //System.out.println("HO ATTIVATO la "+vmtoact);
         }
         catch(Exception e){
             LOGGER.error("Error occurred in moveVM:"+e.getMessage());
@@ -422,17 +425,18 @@ public class SunLightPolicy implements Policy,Runnable{
         catch (Exception ex) {
             LOGGER.error(ex.getMessage());
         }
-//        try {
-//            param = new JSONObject();
-//            param.put("site", sitetarget);
-//            param.put("tenant", tenant);
-//            Response r = cws.make_request(this.bbUrl + "/connectOne/", this.bbuser, this.bbpass, tenant, "post", param.toString());
-//        } catch (WSException wse) {
-//            LOGGER.error("The request has generated a WS Exception!" + wse.getMessage());
-//        }
-//        catch (Exception ex) {
-//            LOGGER.error(ex.getMessage());
-//        }
+        try {
+            param = new JSONObject();
+            param.put("site", sitetarget);
+            param.put("tenant", tenant);
+            System.out.println("----->connenctONE_"+this.bbUrl);
+            Response r = cws.make_request(this.bbUrl + "/connectOne/", this.bbuser, this.bbpass, tenant, "post", param.toString());
+        } catch (WSException wse) {
+            LOGGER.error("The request has generated a WS Exception!" + wse.getMessage());
+        }
+        catch (Exception ex) {
+            LOGGER.error(ex.getMessage());
+        }
     }
     
 }

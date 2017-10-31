@@ -121,11 +121,30 @@ public class DBMongo {
         }
     }
     
+    public void initStable(String file){
+        Element params;
+        try {
+            parser = new ParserXML(new File(file));
+            params = parser.getRootElement().getChild("pluginParams");
+            dbName = params.getChildText("dbName");
+            user = params.getChildText("user");
+            password = params.getChildText("password");
+            //serverList = params.getChild("serversList");
+            this.mdbIp = params.getChildText("serverip");
+            
+
+        } 
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        this.connectLocale(this.mdbIp);
+    }
+    
     public void init() {
         //String file=configFile;
         String file=System.getenv("HOME");
         if(file==null){
-            file="/opt/tomcat/webapps/OSFFM/WEB-INF/configuration_bigDataPlugin.xml";
+            file="/home/beacon/beaconConf/configuration_bigDataPlugin.xml";
             
             /*String restkey="[";
             String rest="["; 

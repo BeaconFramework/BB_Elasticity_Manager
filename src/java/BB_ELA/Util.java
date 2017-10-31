@@ -36,7 +36,8 @@ public class Util {
      */
     public Util() {
         this.m=new DBMongo();
-        this.m.connectLocale("10.9.240.1");
+        //this.m.connectLocale("10.9.240.1");
+        this.m.initStable("/home/beacon/beaconConf/configuration_bigDataPlugin.xml");
     }
 
     /**
